@@ -7,7 +7,7 @@ use App\Http\Controllers\AdminPointsController;
 // Authentication Routes
 Route::get('/', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/', [LoginController::class, 'login'])->name('dologin');
-Route::get('register', [RegisterController::class, 'showRegistrationForm'])->name('register')->middleware('alreadyLoggedIn');
+Route::get('register', [RegisterController::class, 'showRegistrationForm'])->name('register');
 Route::post('register', [RegisterController::class, 'register'])->name('doregister');
 Route::post('logout', [LogoutController::class, 'logout'])->name('logout');
 Route::get('dashboard',[LoginController::class,'dashboard'])->middleware('isLoggedIn');

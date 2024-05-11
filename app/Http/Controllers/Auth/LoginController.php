@@ -18,7 +18,7 @@ class LoginController extends Controller
     public function login(Request $request)
 {
     $request->validate([            
-        'name'=>'required',
+        'name'=>'required,name',
         'password'=>'required|min:8|max:12'
     ]);
 
@@ -31,10 +31,10 @@ class LoginController extends Controller
             $request->session()->put('loginId', $user->id);
             return redirect('dashboard');
         } else {
-            return back()->with('fail','Password not match!');
+            return back()->with('fail','كلمة المرور خاطئة , حاول مرة ثانية');
         }
     } else {
-        return back()->with('fail','you must be admin to login.');
+        return back()->with('fail','غير مسموح لك بالوصول للوحة التحكم');
     }        
 }
 public function dashboard()
