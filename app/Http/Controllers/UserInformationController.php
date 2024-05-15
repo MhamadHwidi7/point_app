@@ -29,6 +29,8 @@ class UserInformationController extends Controller
                 'first_character' => $firstCharacter, // Add the first character to the response
                 'account_number' => $user->account_number,
                 'card_number' => $user->card_number,
+                'total_money' => $user->total_money,
+
                 // More fields as necessary
             ], 200);
         } catch (\Tymon\JWTAuth\Exceptions\TokenExpiredException $e) {

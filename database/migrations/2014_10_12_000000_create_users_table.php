@@ -21,6 +21,9 @@ return new class extends Migration
             $table->string('card_number')->unique(); // Add card number field
             $table->string('card_passcode'); // Add card passcode field
             $table->string('device_token')->nullable();
+            $table->string('verification_code')->nullable(); // Add verification_code field
+            $table->double('total_money')->default(0.0);
+
             $table->rememberToken();
             $table->timestamps();
         });

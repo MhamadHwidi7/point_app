@@ -75,7 +75,7 @@
             </div>
         @endif
         <div>
-            <input type="text" id="name" name="name"  placeholder="الاسم"  required>
+            <input type="text" id="name" name="name" placeholder="الاسم" required>
         </div>
         <div>
             <input type="password" id="password" name="password" placeholder="كلمة المرور" required>
@@ -83,13 +83,13 @@
         <div>
             <button type="submit">تسجيل الدخول</button>
         </div>
-        @if($errors->any())
+        @if ($errors->any())
             <div style="color: red;">
-                {{$errors->first()}}
+                {{ $errors->first() }}
             </div>
         @endif
         <div class="register-link">
-            <a href="{{ route('doregister') }}">لا تملك حساب؟ اضغط هنا</a>
+            <a href="{{ route('register') }}">لا تملك حساب؟ اضغط هنا</a>
         </div>
     </form>
 </body>

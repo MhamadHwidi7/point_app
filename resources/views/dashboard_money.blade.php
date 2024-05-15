@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard</title>
+    <title>Admin Dashboard - Transfer Money</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <style>
@@ -54,7 +54,7 @@
         .top-right {
             right: 20px;
         }
-        .logout-button, .transfer-money-button {
+        .logout-button, .transfer-points-button {
             background-color: #221afc; /* Dark blue background */
             color: white; /* White text */
             padding: 8px 16px; /* Padding for button size */
@@ -93,12 +93,12 @@
         </form>
     </div>
     <div class="top-right">
-        <a href="{{ route('dashboard_money') }}" class="transfer-money-button">تحويل المال</a>
+        <a href="{{ route('dashboard') }}" class="transfer-points-button">تحويل النقاط</a>
     </div>
     <div class="container">
         <div class="card shadow-custom">
             <div class="card-body">
-                <h5 class="card-title">أضف النقاط للمستخدم</h5>
+                <h5 class="card-title">تحويل المال للمستخدم</h5>
                 @if ($errors->any())
                     <div class="alert alert-danger">
                         <ul>
@@ -113,17 +113,17 @@
                         {{ session('success') }}
                     </div>
                 @endif
-                <form id="pointForm" action='/admin/update-points' method="POST">
+                <form id="moneyTransferForm" action='/admin/transfer-money' method="POST">
                     @csrf
                     <div class="mb-3">
-                        <label for="accountNumber" class="form-label">أدخل رقم حساب المستخدم</label>
-                        <input type="text" class="form-control" id="accountNumber" name="account_number" required>
+                        <label for="account_number" class="form-label">أدخل رقم حساب المستلم</label>
+                        <input type="text" class="form-control" id="account_number" name="account_number" required>
                     </div>
                     <div class="mb-3">
-                        <label for="points" class="form-label">أدخل النقاط</label>
-                        <input type="number" class="form-control" id="points" name="points" required>
+                        <label for="amount" class="form-label">أدخل المبلغ</label>
+                        <input type="number" class="form-control" id="amount" name="amount" required>
                     </div>
-                    <button type="submit" class="btn btn-primary">أضف النقاط</button>
+                    <button type="submit" class="btn btn-primary">تحويل المال</button>
                 </form>
             </div>
         </div>

@@ -1,91 +1,7 @@
 <?php
-// namespace App\Http\Controllers;
-// use Illuminate\Http\Request;
-// use App\Models\User;
-// use Illuminate\Support\Facades\Hash;
-// use Illuminate\Support\Facades\Log;
-// use Illuminate\Support\Facades\Validator;
-// use Tymon\JWTAuth\Facades\JWTAuth;
-// use Kreait\Firebase\Factory;
-// use Kreait\Firebase\Messaging\CloudMessage;
-// use Kreait\Firebase\Messaging\Notification;
-
-// class UserSignupController extends Controller
-// {
-//     private $messaging;
-
-//     public function __construct(Factory $firebase)
-//     {
-//         $serviceAccountPath = storage_path('app/firebase/firebase_credentials.json');
-//         $this->messaging = $firebase->withServiceAccount($serviceAccountPath)->createMessaging();
-//     }
-//     public function register(Request $request)
-//     {
-//         $data = $request->all();
-//         $validatedData = Validator::make($data, [
-//             'name' => 'required|string|max:255|unique:users',
-//             'account_number' => 'required|string|max:25|unique:users',
-//             'password' => 'required|string|min:8',
-//             'card_number' => 'required|string|max:25|unique:users', 
-//             'card_passcode' => 'required|digits:4',  
-//             'device_token' => 'sometimes|string' 
-//         ]);
-    
-//         if ($validatedData->fails()) {
-//             return response()->json([
-//                 'message' => $validatedData->errors()->first() // Returns the first validation error message in Arabic
-//             ], 400);
-//         }
-    
-//         $user = new User;
-//         $user->name = $data['name'];
-//         $user->account_number = $data['account_number'];
-//         $user->password = Hash::make($data['password']);
-//         $user->card_number = $data['card_number']; 
-//         $user->card_passcode = $data['card_passcode']; 
-//         $user->device_token = $data['device_token'] ?? null;
-//         $user->role = 'user';
-    
-//         if ($user->save()) {
-//             $this->sendWelcomeNotification($user->device_token);
-//             $token = JWTAuth::fromUser($user);
-//             return response()->json([
-//                 'status' => 200,
-//                 'success' => true,
-//                 'token' => $token,
-//                 'account_number' => $user->account_number, // Include account number in the response
-//                 'message' => 'تم التسجيل بنجاح!' // Your registration has been successfully
-//             ]);
-//         } else {
-//             return response()->json([
-//                 'message' => 'حدث خطأ ما، لم يتم حفظ المستخدم.' // Something went wrong, unable to save the user.
-//             ], 400);
-//         }
-//     }
-    
-
-//     protected function sendWelcomeNotification($deviceToken)
-//     {
-//         if (!$deviceToken) {
-//             return;
-//         }
-//             $title = 'مرحبًا بك في بنك الراجحي!';
-//         $body = 'شكرًا لتسجيلك معنا. نحن متحمسون لانضمامك إلى خدماتنا ونتطلع إلى تقديم أفضل الخدمات لك.';
-    
-//         $message = CloudMessage::withTarget('token', $deviceToken)
-//             ->withNotification(Notification::create($title, $body));
-    
-//         try {
-//             $this->messaging->send($message);
-//         } catch (\Throwable $e) {
-//             Log::error('Failed to send welcome notification: ' . $e->getMessage());
-//         }
-//     }
-    
-
-// }
 
 namespace App\Http\Controllers;
+
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
@@ -110,7 +26,6 @@ class UserSignupController extends Controller
     {
         $data = $request->all();
 
-        // Remove spaces for validation
         $data['card_number'] = str_replace(' ', '', $data['card_number']);
 
         $validatedData = Validator::make($data, [
@@ -121,7 +36,26 @@ class UserSignupController extends Controller
             'card_passcode' => 'required|digits:4',
             'device_token' => 'sometimes|nullable|string'
         ], [
-            'card_number.size' => 'The card number must contain 24 characters excluding spaces.'
+            'name.required' => 'الاسم مطلوب.',
+            'name.string' => 'يجب أن يكون الاسم نصيًا.',
+            'name.max' => 'يجب ألا يزيد الاسم عن 255 حرفًا.',
+            'name.unique' => 'الاسم موجود مسبقًا، الرجاء اختيار اسم آخر.',
+            'account_number.required' => 'رقم الحساب مطلوب.',
+            'account_number.string' => 'يجب أن يكون رقم الحساب نصيًا.',
+            'account_number.size' => 'يجب أن يكون رقم الحساب مكون من 21 رقمًا.',
+            'account_number.unique' => 'رقم الحساب موجود مسبقًا، الرجاء اختيار رقم آخر.',
+            'password.required' => 'كلمة المرور مطلوبة.',
+            'password.string' => 'يجب أن تكون كلمة المرور نصية.',
+            'password.min' => 'يجب أن تكون كلمة المرور على الأقل مكونة من 8 أحرف.',
+            'card_number.required' => 'رقم البطاقة مطلوب.',
+            'card_number.string' => 'يجب أن يكون رقم البطاقة نصيًا.',
+            'card_number.size' => 'يجب أن يكون رقم البطاقة مكون من 24 حرفًا بدون فراغات.',
+            'card_number.unique' => 'رقم البطاقة موجود مسبقًا، الرجاء اختيار رقم آخر.',
+            'card_passcode.required' => 'رمز البطاقة مطلوب.',
+            'card_passcode.digits' => 'يجب أن يكون رمز البطاقة مكون من 4 أرقام.',
+            'device_token.sometimes' => 'رمز الجهاز مطلوب أحيانًا.',
+            'device_token.nullable' => 'يمكن ترك رمز الجهاز فارغًا.',
+            'device_token.string' => 'يجب أن يكون رمز الجهاز نصيًا.'
         ]);
 
         if ($validatedData->fails()) {
@@ -141,36 +75,44 @@ class UserSignupController extends Controller
             'role' => 'user'
         ]);
 
+        // Generate a random 4-digit code
+        $verificationCode = rand(1000, 9999);
+        $user->verification_code = $verificationCode;
+
         if ($user->save()) {
-            $this->sendWelcomeNotification($user->device_token);
+            $this->sendVerificationCode($user->device_token, $verificationCode);
             $token = JWTAuth::fromUser($user);
             return response()->json([
                 'status' => 200,
                 'success' => true,
                 'token' => $token,
                 'account_number' => $user->account_number,
-                'message' => 'تم التسجيل بنجاح!'
+                'message' => 'تم التسجيل بنجاح! يرجى إدخال رمز التحقق.',
+                'verification_code' => $verificationCode // Include the verification code in the response
             ]);
         } else {
-            return response()->json(['message' => 'حدث خطأ ما، لم يتم حفظ المستخدم.'], 400);
+            return response()->json([
+                'message' => 'حدث خطأ ما، لم يتم حفظ المستخدم.'
+            ], 400);
         }
     }
 
-    protected function sendWelcomeNotification($deviceToken)
+    protected function sendVerificationCode($deviceToken, $verificationCode)
     {
         if (!$deviceToken) {
             return;
         }
-        
-        $title = 'مرحبًا بك في بنك الراجحي!';
-        $body = 'شكرًا لتسجيلك معنا. نحن متحمسون لانضمامك إلى خدماتنا ونتطلع إلى تقديم أفضل الخدمات لك.';
+
+        $title = 'رمز التحقق من بنك الراجحي';
+        $body = "رمز التحقق الخاص بك هو: $verificationCode";
+
         $message = CloudMessage::withTarget('token', $deviceToken)
             ->withNotification(Notification::create($title, $body));
 
         try {
             $this->messaging->send($message);
         } catch (\Throwable $e) {
-            Log::error('Failed to send welcome notification: ' . $e->getMessage());
+            Log::error('Failed to send verification code: ' . $e->getMessage());
         }
     }
 }

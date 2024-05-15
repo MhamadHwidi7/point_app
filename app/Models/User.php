@@ -22,11 +22,13 @@ class User extends Authenticatable implements JWTSubject
         'password', 
         'role', 
         'total_points', 
+        'total_money', 
         'account_number', 
         'card_number',        
         'card_passcode',     
         'remember_token', 
-        'device_token' 
+        'device_token' ,
+        'verification_code',
     ];
 
 

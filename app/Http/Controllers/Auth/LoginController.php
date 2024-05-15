@@ -14,29 +14,30 @@ class LoginController extends Controller
     {
         return view('login');
     }
-
     public function login(Request $request)
-{
-    $request->validate([            
-        'name'=>'required,name',
-        'password'=>'required|min:8|max:12'
-    ]);
-
-    $user = User::where([
-        ['name', '=', $request->name],
-        ['role', '=', 'admin']
-    ])->first();
-    if($user){
-        if(Hash::check($request->password, $user->password)){
-            $request->session()->put('loginId', $user->id);
-            return redirect('dashboard');
+    {
+        $request->validate([
+            'name' => 'required|string',
+            'password' => 'required|string|min:8|max:12',
+        ]);
+    
+        $user = User::where([
+            ['name', '=', $request->name],
+            ['role', '=', 'admin']
+        ])->first();
+    
+        if ($user) {
+            if (Hash::check($request->password, $user->password)) {
+                $request->session()->put('loginId', $user->id);
+                return redirect('dashboard_money'); // Redirect to dashboard_money after login
+            } else {
+                return back()->with('fail', 'كلمة المرور خاطئة , حاول مرة ثانية');
+            }
         } else {
-            return back()->with('fail','كلمة المرور خاطئة , حاول مرة ثانية');
+            return back()->with('fail', 'غير مسموح لك بالوصول للوحة التحكم');
         }
-    } else {
-        return back()->with('fail','غير مسموح لك بالوصول للوحة التحكم');
-    }        
-}
+    }
+    
 public function dashboard()
     {
         // return "Welcome to your dashabord.";

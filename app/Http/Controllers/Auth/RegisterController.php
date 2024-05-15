@@ -109,7 +109,8 @@ class RegisterController extends Controller
         $result = $user->save();
         if($result){
             $request->session()->put('loginId', $user->id);
-            return redirect('dashboard')->with('success','تم انشاء الحساب  بنجاح');
+         ///Todo:i change this 
+            return redirect('dashboard_money')->with('success','تم انشاء الحساب  بنجاح');
         } else {
             return back()->with('fail','حدث شيء خاطئ');
         }
