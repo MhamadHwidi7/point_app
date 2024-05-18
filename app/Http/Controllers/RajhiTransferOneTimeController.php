@@ -54,15 +54,20 @@ class RajhiTransferOneTimeController extends Controller
             return response()->json(['message' => 'الرصيد غير كافي.'], 400);
         }
 
-        // خصم المبلغ من المرسل
+        function generateReferenceNumber()
+        {
+            return str_pad(random_int(0, 9999999999999999), 16, '0', STR_PAD_LEFT);
+        }
+
+        // Deduct the amount from the sender
         $sender->total_money -= $data['money'];
         $sender->save();
 
-        // إضافة المبلغ للمستلم
+        // Add the amount to the receiver
         $receiver->total_money += $data['money'];
         $receiver->save();
 
-        // إنشاء سجل المعاملة
+        // Create the transaction record
         $transaction = Transaction::create([
             'sender_account_number' => $sender->account_number,
             'receiver_account_number' => $receiver->account_number,
@@ -70,10 +75,11 @@ class RajhiTransferOneTimeController extends Controller
             'amount' => $data['money'],
             'purpose' => $data['purpose'],
             'fee' => 0.58,
-            'reference_number' => uniqid('ref_')
+            'reference_number' => generateReferenceNumber(),
+            'rajhi_benefits' => 'Al Rajhi Bank beneficiary لمستفيد بنك الراجحي' // Assuming you have this field
         ]);
 
-        // إرسال الإشعارات
+        // Send notifications
         $this->sendNotification($sender, $receiver, $data['money']);
 
         return response()->json([
@@ -82,38 +88,6 @@ class RajhiTransferOneTimeController extends Controller
             'message' => 'تمت عملية التحويل بنجاح.',
             'transaction_details' => $transaction
         ]);
-    }
-
-    public function checkReceiverAccount(Request $request)
-    {
-        $validatedData = Validator::make($request->all(), [
-            'receiver_account_number' => 'required|string'
-        ], [
-            'receiver_account_number.required' => 'رقم الحساب المستلم مطلوب.',
-            'receiver_account_number.string' => 'يجب أن يكون رقم الحساب المستلم نصيًا.'
-        ]);
-
-        if ($validatedData->fails()) {
-            return response()->json(['message' => $validatedData->errors()->first()], 400);
-        }
-
-        $receiver = User::where('account_number', $request->receiver_account_number)->first();
-
-        if ($receiver) {
-            return response()->json([
-                'status' => 200,
-                'success' => true,
-                'message' => 'رقم الحساب المستلم موجود.',
-                'receiver_account_number' => $receiver->account_number,
-                'receiver_name' => $receiver->name
-            ]);
-        } else {
-            return response()->json([
-                'status' => 404,
-                'success' => false,
-                'message' => 'رقم الحساب المستلم غير موجود.'
-            ]);
-        }
     }
 
     public function getTransactionDetails(Request $request)
@@ -131,10 +105,25 @@ class RajhiTransferOneTimeController extends Controller
 
         $transaction = Transaction::where('reference_number', $request->reference_number)->first();
 
+        if (!$transaction) {
+            return response()->json(['message' => 'Transaction not found'], 404);
+        }
+
+        // Ensuring that fee is returned as a double
+        $transactionDetails = $transaction->toArray();
+        $transactionDetails['fee'] = (double)$transactionDetails['fee'];
+
+        // Fetch the sender's name and the remaining balance
+        $receiver = User::where('account_number', $transaction->receiver_account_number)->first();
+
         return response()->json([
             'status' => 200,
             'success' => true,
-            'transaction_details' => $transaction
+            'transaction_details' => $transactionDetails,
+            'receiver_name' => $receiver->name,
+            'amount_available' => $receiver->total_money,
+            'date' => $transaction->created_at->format('Y/m/d - h:i A'),
+            'rajhi_beneficiary' => "Al Rajhi Bank beneficiary لمستفيد بنك الراجحي"
         ]);
     }
 

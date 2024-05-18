@@ -10,6 +10,7 @@ use App\Http\Controllers\FirstCharNameController;
 use App\Http\Controllers\VerifyCodeController;
 use App\Http\Controllers\RajhiTransferOneTimeController;
 use App\Http\Controllers\LocalTransferOneTimeController;
+use App\Http\Controllers\TransactionDetailsController;
 
 // User Authentication Routes
 Route::post('/register', [UserSignupController::class, 'register']);
@@ -32,3 +33,4 @@ Route::get('/transaction-details', [RajhiTransferOneTimeController::class, 'getT
 Route::post('/local-transfer', [LocalTransferOneTimeController::class, 'transfer']);
 Route::get('/check-receiver-card', [LocalTransferOneTimeController::class, 'checkReceiverAccount']);
 Route::get('/local-transaction-details', [LocalTransferOneTimeController::class, 'getLocalTransactionDetails']);
+Route::get('/show-transaction-details', [TransactionDetailsController::class, 'showTransactionDetails']);

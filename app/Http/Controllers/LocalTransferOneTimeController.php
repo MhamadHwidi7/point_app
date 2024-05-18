@@ -24,10 +24,13 @@ class LocalTransferOneTimeController extends Controller
     public function transfer(Request $request)
     {
         $data = $request->all();
-
+    
+        // Remove spaces from the receiver_card_number
+        $data['receiver_card_number'] = preg_replace('/\s+/', '', $data['receiver_card_number']);
+    
         $validatedData = Validator::make($data, [
             'bank_name' => 'required|string',
-            'card_number' => 'required|string|exists:users,card_number',
+            'card_number' => 'required|string|exists:users,account_number',
             'first_name' => 'required|string',
             'last_name' => 'required|string',
             'receiver_card_number' => 'required|string|exists:users,card_number',
@@ -48,26 +51,31 @@ class LocalTransferOneTimeController extends Controller
             'purpose.string' => 'يجب أن يكون الغرض نصيًا.',
             'purpose.max' => 'يجب ألا يتجاوز الغرض 255 حرفًا.'
         ]);
-
+    
         if ($validatedData->fails()) {
             return response()->json(['message' => $validatedData->errors()->first()], 400);
         }
-
-        $sender = User::where('card_number', $data['card_number'])->first();
+    
+        $sender = User::where('account_number', $data['card_number'])->first();
         $receiver = User::where('card_number', $data['receiver_card_number'])->first();
-
+    
         if ($sender->total_money < $data['money']) {
             return response()->json(['message' => 'الرصيد غير كافي.'], 400);
         }
-
+    
+        function generateReferenceNumber()
+        {
+            return str_pad(random_int(0, 9999999999999999), 16, '0', STR_PAD_LEFT);
+        }
+    
         // خصم المبلغ من المرسل
         $sender->total_money -= $data['money'];
         $sender->save();
-
+    
         // إضافة المبلغ للمستلم
         $receiver->total_money += $data['money'];
         $receiver->save();
-
+    
         // إنشاء سجل المعاملة
         $transaction = Transaction::create([
             'sender_account_number' => $sender->account_number,
@@ -76,12 +84,13 @@ class LocalTransferOneTimeController extends Controller
             'amount' => $data['money'],
             'purpose' => $data['purpose'],
             'fee' => 0.58,
-            'reference_number' => uniqid('ref_')
+            'reference_number' => generateReferenceNumber(),
+            'rajhi_benefits' => 'Local Bank beneficiary لمستفيد البنك المحلي' // Assuming you have this field
         ]);
-
+    
         // إرسال الإشعارات
         $this->sendNotification($sender, $receiver, $data['money']);
-
+    
         return response()->json([
             'status' => 200,
             'success' => true,
@@ -89,39 +98,7 @@ class LocalTransferOneTimeController extends Controller
             'transaction_details' => $transaction
         ]);
     }
-
-    public function checkReceiverAccount(Request $request)
-    {
-        $validatedData = Validator::make($request->all(), [
-            'receiver_card_number' => 'required|string'
-        ], [
-            'receiver_card_number.required' => 'رقم بطاقة المستلم مطلوب.',
-            'receiver_card_number.string' => 'يجب أن يكون رقم بطاقة المستلم نصيًا.'
-        ]);
-
-        if ($validatedData->fails()) {
-            return response()->json(['message' => $validatedData->errors()->first()], 400);
-        }
-
-        $receiver = User::where('card_number', $request->receiver_card_number)->first();
-
-        if ($receiver) {
-            return response()->json([
-                'status' => 200,
-                'success' => true,
-                'message' => 'رقم بطاقة المستلم موجود.',
-                'receiver_card_number' => $receiver->card_number,
-                'receiver_name' => $receiver->name
-            ]);
-        } else {
-            return response()->json([
-                'status' => 404,
-                'success' => false,
-                'message' => 'رقم بطاقة المستلم غير موجود.'
-            ]);
-        }
-    }
-
+    
     public function getLocalTransactionDetails(Request $request)
     {
         $validatedData = Validator::make($request->all(), [
@@ -137,10 +114,25 @@ class LocalTransferOneTimeController extends Controller
 
         $transaction = Transaction::where('reference_number', $request->reference_number)->first();
 
+        if (!$transaction) {
+            return response()->json(['message' => 'Transaction not found'], 404);
+        }
+
+        // Ensuring that fee is returned as a double
+        $transactionDetails = $transaction->toArray();
+        $transactionDetails['fee'] = (double)$transactionDetails['fee'];
+
+        // Fetch the sender's name and the remaining balance
+        $receiver = User::where('account_number', $transaction->receiver_account_number)->first();
+
         return response()->json([
             'status' => 200,
             'success' => true,
-            'transaction_details' => $transaction
+            'transaction_details' => $transactionDetails,
+            'receiver_name' => $receiver->name,
+            'amount_available' => $receiver->total_money,
+            'date' => $transaction->created_at->format('Y/m/d - h:i A'),
+            'rajhi_beneficiary' => "Local Bank beneficiary لمستفيد البنك المحلي"
         ]);
     }
 

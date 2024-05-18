@@ -17,5 +17,6 @@ class Transaction extends Model
         'purpose',
         'fee',
         'reference_number',
+        'rajhi_benefits'
     ];
 }

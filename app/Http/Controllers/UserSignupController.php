@@ -26,6 +26,7 @@ class UserSignupController extends Controller
     {
         $data = $request->all();
 
+        // Remove spaces from the card number for validation and storage
         $data['card_number'] = str_replace(' ', '', $data['card_number']);
 
         $validatedData = Validator::make($data, [
@@ -62,14 +63,11 @@ class UserSignupController extends Controller
             return response()->json(['message' => $validatedData->errors()->first()], 400);
         }
 
-        // Reformat card number for storage
-        $formattedCardNumber = implode(' ', str_split($data['card_number'], 4));
-
         $user = new User([
             'name' => $data['name'],
             'account_number' => $data['account_number'],
             'password' => Hash::make($data['password']),
-            'card_number' => $formattedCardNumber,
+            'card_number' => $data['card_number'], // Store without spaces
             'card_passcode' => $data['card_passcode'],
             'device_token' => $data['device_token'],
             'role' => 'user'
@@ -82,11 +80,18 @@ class UserSignupController extends Controller
         if ($user->save()) {
             $this->sendVerificationCode($user->device_token, $verificationCode);
             $token = JWTAuth::fromUser($user);
+
+            // Format card number with spaces for the response
+            $formattedCardNumber = implode(' ', str_split($user->card_number, 4));
+
             return response()->json([
                 'status' => 200,
                 'success' => true,
                 'token' => $token,
+                'device_token' => $user->device_token,
+
                 'account_number' => $user->account_number,
+                'card_number' => $user->card_number,
                 'message' => 'تم التسجيل بنجاح! يرجى إدخال رمز التحقق.',
                 'verification_code' => $verificationCode // Include the verification code in the response
             ]);

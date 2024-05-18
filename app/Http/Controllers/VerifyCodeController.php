@@ -6,7 +6,6 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
-
 use Kreait\Firebase\Factory;
 use Kreait\Firebase\Messaging\CloudMessage;
 use Kreait\Firebase\Messaging\Notification;
@@ -24,23 +23,45 @@ class VerifyCodeController extends Controller
 
     public function verifyCode(Request $request)
     {
-        $data = $request->query();
+        $data = $request->all(); // Get all request data
+
+        Log::info('Received verification request', ['data' => $data]);
 
         $validatedData = Validator::make($data, [
-            'device_token' => 'required|string',
+            'device_token' => 'required_without:user_id|string',
+            'user_id' => 'required_without:device_token|integer',
             'verification_code' => 'required|digits:4'
         ]);
 
         if ($validatedData->fails()) {
+            Log::error('Validation failed', ['errors' => $validatedData->errors()->first()]);
             return response()->json([
                 'message' => $validatedData->errors()->first()
             ], 400);
         }
 
-        $user = User::where('device_token', $data['device_token'])->first();
+        $userQuery = User::query();
+        if (!empty($data['device_token'])) {
+            $userQuery->where('device_token', $data['device_token']);
+        }
+        if (!empty($data['user_id'])) {
+            $userQuery->where('id', $data['user_id']);
+        }
 
-        if ($user && $user->verification_code == $data['verification_code']) {
-            $user->verification_code = null; 
+        $user = $userQuery->first();
+
+        if (!$user) {
+            Log::error('User not found', ['query' => $data]);
+            return response()->json([
+                'message' => 'المستخدم غير موجود.'
+            ], 400);
+        }
+
+        Log::info('User found', ['user' => $user]);
+
+        if ($user->verification_code == $data['verification_code']) {
+            Log::info('Verification code matched', ['user' => $user]);
+            $user->verification_code = null;
             $user->save();
 
             $token = JWTAuth::fromUser($user);
@@ -55,6 +76,11 @@ class VerifyCodeController extends Controller
                 'message' => 'تم التحقق بنجاح! مرحبًا بك في بنك الراجحي.'
             ]);
         } else {
+            Log::error('Verification code mismatch', [
+                'device_token' => $data['device_token'] ?? null,
+                'provided_code' => $data['verification_code'],
+                'stored_code' => $user->verification_code
+            ]);
             return response()->json([
                 'message' => 'رمز التحقق غير صحيح.'
             ], 400);
@@ -76,7 +102,7 @@ class VerifyCodeController extends Controller
         try {
             $this->messaging->send($message);
         } catch (\Throwable $e) {
-            Log::error('Failed to send welcome notification: ' . $e->getMessage());
+            Log::error('Failed to send welcome notification', ['error' => $e->getMessage()]);
         }
     }
 }

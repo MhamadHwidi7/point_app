@@ -20,6 +20,8 @@ return new class extends Migration
             $table->string('purpose');
             $table->decimal('fee', 15, 2);
             $table->string('reference_number')->unique();
+            $table->string('rajhi_benefits')->nullable();
+
             $table->timestamps();
         });
     }
