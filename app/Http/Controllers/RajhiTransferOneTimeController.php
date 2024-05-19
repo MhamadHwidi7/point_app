@@ -59,15 +59,12 @@ class RajhiTransferOneTimeController extends Controller
             return str_pad(random_int(0, 9999999999999999), 16, '0', STR_PAD_LEFT);
         }
 
-        // Deduct the amount from the sender
         $sender->total_money -= $data['money'];
         $sender->save();
 
-        // Add the amount to the receiver
         $receiver->total_money += $data['money'];
         $receiver->save();
 
-        // Create the transaction record
         $transaction = Transaction::create([
             'sender_account_number' => $sender->account_number,
             'receiver_account_number' => $receiver->account_number,
@@ -109,11 +106,9 @@ class RajhiTransferOneTimeController extends Controller
             return response()->json(['message' => 'Transaction not found'], 404);
         }
 
-        // Ensuring that fee is returned as a double
         $transactionDetails = $transaction->toArray();
         $transactionDetails['fee'] = (double)$transactionDetails['fee'];
 
-        // Fetch the sender's name and the remaining balance
         $receiver = User::where('account_number', $transaction->receiver_account_number)->first();
 
         return response()->json([
@@ -125,6 +120,36 @@ class RajhiTransferOneTimeController extends Controller
             'date' => $transaction->created_at->format('Y/m/d - h:i A'),
             'rajhi_beneficiary' => "Al Rajhi Bank beneficiary لمستفيد بنك الراجحي"
         ]);
+    }
+    public function checkReceiverAccount(Request $request)
+    {
+        $validatedData = Validator::make($request->all(), [
+            'receiver_account_number' => 'required|string'
+        ], [
+            'receiver_account_number.required' => 'رقم الحساب المستلم مطلوب.',
+        ]);
+
+        if ($validatedData->fails()) {
+            return response()->json(['message' => $validatedData->errors()->first()], 400);
+        }
+
+        $receiver = User::where('account_number', $request->receiver_account_number)->first();
+
+        if ($receiver) {
+            return response()->json([
+                'status' => 200,
+                'success' => true,
+                'message' => 'رقم الحساب المستلم موجود.',
+                'receiver_name' => $receiver->name,
+                'receiver_account_number' => $receiver->account_number
+            ]);
+        } else {
+            return response()->json([
+                'status' => 404,
+                'success' => false,
+                'message' => 'رقم الحساب المستلم غير موجود.'
+            ], 404);
+        }
     }
 
     private function sendNotification(User $sender, User $receiver, float $amount)

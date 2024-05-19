@@ -20,23 +20,22 @@ class UserInformationController extends Controller
         try {
             $user = JWTAuth::parseToken()->authenticate();
             if (!$user) {
-                return response()->json(['message' => 'المستخدم غير موجود'], 404);  // User not found in Arabic
+                return response()->json(['message' => 'المستخدم غير موجود'], 404);  
             }
-            $firstCharacter = mb_substr($user->name, 0, 1); // Get first character of the user's name
+            $firstCharacter = mb_substr($user->name, 0, 1); 
             return response()->json([
                 'user_id' => $user->id,
                 'user_name' => $user->name,
-                'first_character' => $firstCharacter, // Add the first character to the response
+                'first_character' => $firstCharacter, 
                 'account_number' => $user->account_number,
                 'card_number' => $user->card_number,
                 'total_money' => $user->total_money,
 
-                // More fields as necessary
             ], 200);
         } catch (\Tymon\JWTAuth\Exceptions\TokenExpiredException $e) {
-            return response()->json(['message' => 'انتهت صلاحية الرمز'], 401);  // Token expired in Arabic
+            return response()->json(['message' => 'انتهت صلاحية الرمز'], 401);  
         } catch (\Tymon\JWTAuth\Exceptions\TokenInvalidException $e) {
-            return response()->json(['message' => 'الرمز غير صالح'], 401);  // Token invalid in Arabic
+            return response()->json(['message' => 'الرمز غير صالح'], 401); 
         } catch (\Exception $e) {
             return response()->json(['message' => 'الرمز التفويضي غير موجود'], 401);  // Authorization token not found in Arabic
         }

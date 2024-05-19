@@ -31,6 +31,6 @@ Route::get('/transaction-details', [RajhiTransferOneTimeController::class, 'getT
 
 
 Route::post('/local-transfer', [LocalTransferOneTimeController::class, 'transfer']);
-Route::get('/check-receiver-card', [LocalTransferOneTimeController::class, 'checkReceiverAccount']);
+Route::get('/check-receiver-card', [LocalTransferOneTimeController::class, 'checkReceiverCard']);
 Route::get('/local-transaction-details', [LocalTransferOneTimeController::class, 'getLocalTransactionDetails']);
 Route::get('/show-transaction-details', [TransactionDetailsController::class, 'showTransactionDetails']);

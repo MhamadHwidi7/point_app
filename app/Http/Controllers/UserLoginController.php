@@ -40,12 +40,10 @@ class UserLoginController extends Controller
             $user->save();
         }
 
-        // Generate a random 4-digit code for verification
         $verificationCode = rand(1000, 9999);
         $user->verification_code = $verificationCode;
         $user->save();
 
-        // Send the verification code notification
         $this->sendVerificationCode($user->device_token, $verificationCode);
     
         $token = JWTAuth::fromUser($user);
@@ -58,7 +56,7 @@ class UserLoginController extends Controller
             'card_number' => $user->card_number,
             'token' => $token,
             'device_token' => $user->device_token,
-            'verification_code' => $verificationCode // Include the verification code in the response
+            'verification_code' => $verificationCode 
         ]);
     }
 

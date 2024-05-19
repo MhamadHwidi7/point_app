@@ -25,7 +25,6 @@ class LocalTransferOneTimeController extends Controller
     {
         $data = $request->all();
     
-        // Remove spaces from the receiver_card_number
         $data['receiver_card_number'] = preg_replace('/\s+/', '', $data['receiver_card_number']);
     
         $validatedData = Validator::make($data, [
@@ -118,11 +117,8 @@ class LocalTransferOneTimeController extends Controller
             return response()->json(['message' => 'Transaction not found'], 404);
         }
 
-        // Ensuring that fee is returned as a double
         $transactionDetails = $transaction->toArray();
         $transactionDetails['fee'] = (double)$transactionDetails['fee'];
-
-        // Fetch the sender's name and the remaining balance
         $receiver = User::where('account_number', $transaction->receiver_account_number)->first();
 
         return response()->json([
@@ -149,6 +145,36 @@ class LocalTransferOneTimeController extends Controller
             $this->messaging->send($receiverMessage);
         } catch (\Throwable $e) {
             Log::error('فشل في إرسال الإشعار: ' . $e->getMessage());
+        }
+    }
+    public function checkReceiverCard(Request $request)
+    {
+        $validatedData = Validator::make($request->all(), [
+            'receiver_card_number' => 'required|string'
+        ], [
+            'receiver_card_number.required' => 'رقم البطاقة المستلمة مطلوب.',
+        ]);
+
+        if ($validatedData->fails()) {
+            return response()->json(['message' => $validatedData->errors()->first()], 400);
+        }
+
+        $receiver = User::where('card_number', $request->receiver_card_number)->first();
+
+        if ($receiver) {
+            return response()->json([
+                'status' => 200,
+                'success' => true,
+                'message' => 'رقم البطاقة المستلمة موجود.',
+                'receiver_name' => $receiver->name,
+                'receiver_card_number' => $receiver->card_number
+            ]);
+        } else {
+            return response()->json([
+                'status' => 404,
+                'success' => false,
+                'message' => 'رقم البطاقة المستلمة غير موجود.'
+            ], 404);
         }
     }
 }

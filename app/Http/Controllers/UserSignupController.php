@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
@@ -26,7 +25,6 @@ class UserSignupController extends Controller
     {
         $data = $request->all();
 
-        // Remove spaces from the card number for validation and storage
         $data['card_number'] = str_replace(' ', '', $data['card_number']);
 
         $validatedData = Validator::make($data, [
@@ -67,21 +65,19 @@ class UserSignupController extends Controller
             'name' => $data['name'],
             'account_number' => $data['account_number'],
             'password' => Hash::make($data['password']),
-            'card_number' => $data['card_number'], // Store without spaces
+            'card_number' => $data['card_number'],
             'card_passcode' => $data['card_passcode'],
             'device_token' => $data['device_token'],
             'role' => 'user'
         ]);
 
-        // Generate a random 4-digit code
         $verificationCode = rand(1000, 9999);
         $user->verification_code = $verificationCode;
 
         if ($user->save()) {
-            $this->sendVerificationCode($user->device_token, $verificationCode);
+            $this->sendWelcomeNotification($user->device_token); // Send welcome notification here
             $token = JWTAuth::fromUser($user);
 
-            // Format card number with spaces for the response
             $formattedCardNumber = implode(' ', str_split($user->card_number, 4));
 
             return response()->json([
@@ -89,11 +85,10 @@ class UserSignupController extends Controller
                 'success' => true,
                 'token' => $token,
                 'device_token' => $user->device_token,
-
                 'account_number' => $user->account_number,
                 'card_number' => $user->card_number,
                 'message' => 'تم التسجيل بنجاح! يرجى إدخال رمز التحقق.',
-                'verification_code' => $verificationCode // Include the verification code in the response
+                'verification_code' => $verificationCode
             ]);
         } else {
             return response()->json([
@@ -118,6 +113,25 @@ class UserSignupController extends Controller
             $this->messaging->send($message);
         } catch (\Throwable $e) {
             Log::error('Failed to send verification code: ' . $e->getMessage());
+        }
+    }
+
+    protected function sendWelcomeNotification($deviceToken)
+    {
+        if (!$deviceToken) {
+            return;
+        }
+
+        $title = 'مرحبًا بك في بنك الراجحي!';
+        $body = 'شكرًا لتسجيلك معنا. نحن متحمسون لانضمامك إلى خدماتنا ونتطلع إلى تقديم أفضل الخدمات لك.';
+
+        $message = CloudMessage::withTarget('token', $deviceToken)
+            ->withNotification(Notification::create($title, $body));
+
+        try {
+            $this->messaging->send($message);
+        } catch (\Throwable $e) {
+            Log::error('Failed to send welcome notification: ' . $e->getMessage());
         }
     }
 }
